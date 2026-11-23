@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PixQX — Bildbearbeitung</title>
+<link rel="stylesheet" href="css/pixqx.css">
+</head>
+<body>
+
+<div id="app">
+
+  <div id="topbar">
+    <div class="brand"><span class="dot"></span>PixQX</div>
+    <div class="sep"></div>
+    <button id="btnNew">Neu</button>
+    <label class="file-label" for="fileInput">Öffnen</label>
+    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp,image/svg+xml,.png,.jpg,.jpeg,.gif,.webp,.bmp,.svg">
+    <label class="file-label" for="insertInput">Bild einfügen</label>
+    <input type="file" id="insertInput" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp,image/svg+xml,.png,.jpg,.jpeg,.gif,.webp,.bmp,.svg">
+    <button id="btnExport">Exportieren</button>
+    <div class="sep"></div>
+    <button id="btnUndo" title="Strg+Z">⤺ Rückgängig</button>
+    <button id="btnRedo" title="Strg+Y">⤻ Wiederholen</button>
+    <div class="spacer"></div>
+    <button id="zoomOut">−</button>
+    <span id="zoomLabel" class="mono">100%</span>
+    <button id="zoomIn">+</button>
+    <button id="zoomFit">Einpassen</button>
+  </div>
+
+  <div id="tabBarRow"></div>
+
+  <div id="main">
+    <div id="tools">
+      <button class="tool-btn active" data-tool="move" title="Verschieben (V)">✥</button>
+      <button class="tool-btn" data-tool="select" title="Auswahl (S)">⬚</button>
+      <button class="tool-btn" data-tool="lasso" title="Lasso (K)">⎋</button>
+      <button class="tool-btn" data-tool="wand" title="Zauberstab (W)">✨</button>
+      <button class="tool-btn" data-tool="crop" title="Zuschneiden (C)">⛶</button>
+      <div class="tool-gap"></div>
+      <button class="tool-btn" data-tool="pencil" title="Bleistift (P)">✎</button>
+      <button class="tool-btn" data-tool="brush" title="Pinsel (B)">🖌</button>
+      <button class="tool-btn" data-tool="eraser" title="Radierer (E)">⌫</button>
+      <button class="tool-btn" data-tool="bucket" title="Füllen (G)">🪣</button>
+      <div class="tool-gap"></div>
+      <button class="tool-btn" data-tool="rect" title="Rechteck (R)">▭</button>
+      <button class="tool-btn" data-tool="ellipse" title="Ellipse (O)">◯</button>
+      <button class="tool-btn" data-tool="line" title="Linie (L)">╱</button>
+      <button class="tool-btn" data-tool="text" title="Text (T)">A</button>
+      <div class="tool-gap"></div>
+      <button class="tool-btn" data-tool="eyedropper" title="Pipette (I)">💧</button>
+      <button class="tool-btn" data-tool="zoom" title="Zoom (Z), Alt = verkleinern">🔍</button>
+      <button class="tool-btn" data-tool="hand" title="Hand / Verschieben der Ansicht (H)">✋</button>
+      <div style="flex:1"></div>
+      <div class="fgbg-wrap">
+        <input type="color" id="bgSwatch" class="fgbg-swatch bg" title="Hintergrundfarbe">
+        <input type="color" id="fgSwatch" class="fgbg-swatch fg" title="Vordergrundfarbe">
+        <div class="fgbg-swap" id="fgbgSwap" title="Farben tauschen">⇄</div>
+      </div>
+      <button class="tool-btn" id="btnAbout" title="Über PixQX">ⓘ</button>
+    </div>
+
+    <div id="canvasWrap">
+      <div id="stage">
+        <!-- layer canvases injected here -->
+        <canvas id="overlay"></canvas>
+        <div id="cropActions" style="display:none; position:absolute; gap:6px; z-index:20;">
+          <button id="cropApply" style="background:var(--accent); border:1px solid var(--accent); color:#1a1106; font-weight:600; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer;">Zuschneiden</button>
+          <button id="cropCancel" style="background:var(--panel-2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer;">Abbrechen</button>
+        </div>
+      </div>
+      <div id="cursorReadout">—, —</div>
+    </div>
+
+    <div id="rightpanel">
+      <div class="panel-section">
+        <div class="panel-title">Werkzeug</div>
+        <label class="field">Größe <span class="rangeval" id="sizeVal">12</span></label>
+        <input type="range" id="sizeRange" min="1" max="200" value="12">
+        <label class="field">Deckkraft <span class="rangeval" id="opVal">100%</span></label>
+        <input type="range" id="opRange" min="1" max="100" value="100">
+      </div>
+
+      <div class="panel-section" style="flex:0 0 auto;">
+        <div class="panel-title">
+          Ebenen
+          <button id="btnAddLayer" title="Neue Ebene">+</button>
+        </div>
+        <div id="layerList"></div>
+        <div class="layer-tools">
+          <button id="btnDupLayer">Duplizieren</button>
+          <button id="btnUpLayer">▲</button>
+          <button id="btnDownLayer">▼</button>
+          <button id="btnDelLayer">Löschen</button>
+        </div>
+        <div class="layer-tools" style="margin-top:4px;">
+          <button id="btnMergeDown">Nach unten zusammenführen</button>
+        </div>
+        <div style="font-size:10.5px; color:var(--muted); margin-top:6px;">Doppelklick auf den Namen zum Umbenennen</div>
+        <label class="field">Ebenen-Deckkraft <span class="rangeval" id="layerOpVal">100%</span></label>
+        <input type="range" id="layerOpRange" min="0" max="100" value="100">
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">Filter (aktive Ebene)</div>
+        <div class="filter-grid">
+          <button data-filter="grayscale">Graustufen</button>
+          <button data-filter="invert">Invertieren</button>
+          <button data-filter="sepia">Sepia</button>
+          <button data-filter="blur">Weichzeichnen</button>
+          <button data-filter="sharpen">Schärfen</button>
+          <button data-filter="brightnessUp">Heller</button>
+          <button data-filter="brightnessDown">Dunkler</button>
+          <button data-filter="contrastUp">Mehr Kontrast</button>
+          <button data-filter="contrastDown">Weniger Kontrast</button>
+          <button data-filter="saturateUp">Mehr Sättigung</button>
+          <button data-filter="saturateDown">Weniger Sättigung</button>
+          <button data-filter="hueRotate">Farbton drehen</button>
+          <button data-filter="posterize">Posterisieren</button>
+          <button data-filter="threshold">Schwarz/Weiß-Schwelle</button>
+          <button data-filter="noise">Rauschen</button>
+          <button data-filter="pixelate">Verpixeln</button>
+          <button data-filter="vignette">Vignette</button>
+          <button data-filter="warm">Warmton</button>
+          <button data-filter="cool">Kaltton</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="statusbar">
+    <span id="docSize" class="mono">—</span>
+    <span id="layerInfo" class="mono">—</span>
+    <span style="flex:1"></span>
+    <span class="mono">PixQX · selbstgehostet</span>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="newModal">
+  <div class="modal">
+    <h3>Neues Dokument</h3>
+    <div class="row2">
+      <div><label class="field">Breite</label><input type="number" id="newW" value="1200"></div>
+      <div><label class="field">Höhe</label><input type="number" id="newH" value="800"></div>
+    </div>
+    <label class="field">Hintergrund</label>
+    <input type="color" id="newBg" value="#ffffff">
+    <div class="actions">
+      <button id="newCancel">Abbrechen</button>
+      <button id="newCreate" class="primary">Erstellen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="aboutModal">
+  <div class="modal" style="text-align:center;">
+    <img class="about-logo" src="pixqx-logo.svg" alt="PixQX Logo">
+    <h3 style="margin-bottom:6px;">PixQX v0.7</h3>
+    <p style="color:var(--muted); font-size:12.5px; margin:4px 0; line-height:1.6;">
+      Lizenz: AGPL-3.0
+    </p>
+    <p style="margin:0 0 18px;"></p>
+    <div class="actions" style="justify-content:center;">
+      <button id="aboutClose" class="primary">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="exportModal">
+  <div class="modal">
+    <h3>Exportieren</h3>
+    <label class="field">Dateiname</label>
+    <input type="text" id="exportName" value="pixqx-export">
+    <label class="field">Format</label>
+    <select id="exportFormat" style="width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--text); border-radius:5px; padding:6px; font-size:12px;">
+      <option value="image/png">PNG (verlustfrei, Transparenz)</option>
+      <option value="image/jpeg">JPEG (kleinere Dateigröße)</option>
+      <option value="image/webp">WEBP (modern, kleinere Dateigröße)</option>
+    </select>
+    <div id="exportQualityWrap" style="display:none;">
+      <label class="field">Qualität <span class="rangeval" id="exportQualityVal">90%</span></label>
+      <input type="range" id="exportQuality" min="10" max="100" value="90">
+    </div>
+    <div class="actions">
+      <button id="exportCancel">Abbrechen</button>
+      <button id="exportConfirm" class="primary">Herunterladen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="warnModal">
+  <div class="modal">
+    <h3>Nicht exportierte Änderungen</h3>
+    <p style="color:var(--muted); font-size:12.5px; line-height:1.6; margin:0 0 16px;">
+      Dieser Tab enthält nicht exportierte Änderungen. Beim Fortfahren gehen sie verloren.
+    </p>
+    <div class="actions" style="justify-content:space-between; flex-wrap:wrap;">
+      <button id="warnCancel">Abbrechen</button>
+      <button id="warnExport">Exportieren</button>
+      <button id="warnDiscard" class="primary">Trotzdem fortfahren</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/pixqx-filters.js" defer></script>
+<script src="js/pixqx-state.js" defer></script>
+<script src="js/pixqx-tools.js" defer></script>
+<script src="js/pixqx-ui.js" defer></script>
+</body>
+</html>
